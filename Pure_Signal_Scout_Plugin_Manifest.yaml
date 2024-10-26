@@ -21,4 +21,4 @@ Descriptor:
 SkillGroups:
   - Format: API
     Settings:
-      OpenApiSpecUrl:  https://raw.githubusercontent.com/team-cymru/scout-copilot/refs/heads/CFS_Integration_Files/Pure_Signal_Scout_OpenAPI_Specification.yaml?token=GHSAT0AAAAAACZOZBKIOBNKFECJ6S4MSUE2ZY2LFLQ
+      OpenApiSpecUrl:  https://raw.githubusercontent.com/team-cymru/scout-copilot/refs/heads/CFS_Integration_Files/Pure_Signal_Scout_OpenAPI_Specification.yaml
