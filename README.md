@@ -5,11 +5,11 @@
 
 ### Pre-requisites
 
-#### Pure Signal Scout Plugin [Manifest File](<LINK>)
+#### Pure Signal Scout Plugin [Manifest File](https://raw.githubusercontent.com/team-cymru/scout-copilot/refs/heads/CFS_Integration_Files/Pure_Signal_Scout_Plugin_Manifest.yaml)
 
-#### API Key
+#### 1. API Key
 
-Steps to generate Key :
+Steps to generate API Key :
 
 1. Open https://scout.cymru.com
 
@@ -42,7 +42,7 @@ Steps to generate Key :
 
 #### Upload the Custom Plugin
 
-1. Obtain the file [scout-manifest.yaml](<LINK>) from this directory.
+1. Obtain the file [scout-manifest.yaml](https://raw.githubusercontent.com/team-cymru/scout-copilot/refs/heads/CFS_Integration_Files/Pure_Signal_Scout_Plugin_Manifest.yaml) from this directory.
    <br>
 2. Click on add plugin in Security Copilot
    <img src="./Images/Setup/1_Add_plugin_button.png"/>
