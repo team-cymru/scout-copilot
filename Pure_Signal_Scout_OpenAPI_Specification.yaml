@@ -147,6 +147,7 @@ paths:
           required: false
           schema:
             type: number
+            default : 100
           description: "Size: The size of the response, in records, to return."
           example: 100
         - name: sections
@@ -251,6 +252,7 @@ paths:
           required: false
           schema:
             type: number
+            default : 100
           example: 1000
       responses:
         200:
