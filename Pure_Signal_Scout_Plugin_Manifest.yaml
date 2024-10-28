@@ -1,0 +1,24 @@
+Descriptor:
+  Name: Pure Signal Scout
+  DisplayName: Pure Signal Scout Plugin
+  DescriptionDisplay: Scout enables the SOC team to be more effective, agile and efficient. It's completely transformed how you hunt for threats, gain attribution and share actionable intelligence internally. It analyzes the IP Address and accordingly returns the report. Scout API Plugin which is used for analysis of the IP Address Relationship , analyzed based on Scout Query Language and Foundation API.
+  Description: |-
+   Use this skill set to call the Pure Signal Scout API when the user provides an IP address, multiple IPs, a domain, or a Scout query to retrieve information such as identity, communication (comms), passive DNS, open ports, X.509 certificates, fingerprints, WHOIS data, summaries, etc.
+    - This skill invokes the Pure Signal Scout API.
+    - Foundation API: Provides results for multiple IP addresses and the ability to analyze them in bulk. The Foundation API helps interpret whether a set of IP addresses is likely to be suspicious, malicious, or informational.
+    - IP Details API: Provides advanced details for a specific IP address, such as identity, communication (comms), passive DNS, open ports, X.509 certificates, fingerprints, WHOIS data, summaries, etc.
+    - Search API: Provides information about domains and Scout search queries, including country codes, autonomous system information, tags, WHOIS data, open ports, passive DNS, communication, service details, fingerprints, X.509 certificates, etc.
+  
+  Icon: "https://static.wixstatic.com/media/6b0b63_7da7226d62944f029f1bbd447742a62b~mv2.png/v1/fill/w_120,h_104,al_c,q_85,usm_0.66_1.00_0.01,enc_auto/6b0b63_7da7226d62944f029f1bbd447742a62b~mv2.png"
+  SupportedAuthTypes:
+    - ApiKey
+  Authorization:
+    Type: APIKey
+    Key: Authorization
+    Location: Header
+    AuthScheme: 'Token'
+
+SkillGroups:
+  - Format: API
+    Settings:
+      OpenApiSpecUrl:  https://raw.githubusercontent.com/team-cymru/scout-copilot/refs/heads/CFS_Integration_Files/Pure_Signal_Scout_OpenAPI_Specification.yaml

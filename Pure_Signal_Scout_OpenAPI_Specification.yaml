@@ -1,0 +1,2184 @@
+openapi: 3.0.0
+
+info:
+  title: "Pure Signal Scout"
+  description: "The Scout plugin provides functionality to fetch details about IP address relationships and foundation IP details, search results based on Scout Query, and return reports using the Scout API."
+  version: "1.0.0"
+  contact:
+    name: "Cymru Pure Signal Scout team"
+    url: "https://www.team-cymru.com/pure-signal-scout"
+    email: "support@cymru.com"
+
+externalDocs:
+  description: "Scout API Documentation"
+  url: https://scout.cymru.com/docs/scout
+
+servers:
+  - url: https://scout.cymru.com
+
+paths:
+  /api/scout/ip/foundation:
+    get:
+      operationId: "ScoutFoundationAPI"
+      summary: "The foundation API provide insights about IP Addresses which tell about IPs are suspicious, malicious or informational."
+      description: |
+        Provide insights about IP Addresses which tell about IPs are suspicious, malicious or informational.
+        The foundation API gets critical information about single and multiple IPs. The
+        foundation API contains the data which includes autonomous system Information (AS Info), tags, Insights
+        etc. Based on various IPs the data list includes the critical information regarding each IP. 
+        Based on Insights, users can find the IP rating such as suspicious etc. Insights appear on an IP address's summary view and offer useful information at a glance such as:
+
+        1. Combinations of malicious tags
+        2. Suspicious activities
+        3. Peculiar domains
+        4. Recently expired domain records
+        
+        Insights are sorted by rank of descending maliciousness (malicious, suspicious, followed by informational). 
+        The overall rating of the IP is determined by the most malicious insight. A maximum of ten insights are shown per IP Address searched.
+
+        #ExamplePrompt Use Scout to create a report of foundation detail of following IPs 185.220.100.240, 185.220.101.7 and list down only insights corresponding to each IP Address in tabular form. <br>
+        #ExamplePrompt Use Scout to create a report of foundation detail of the following IPs 185.220.100.240, 185.220.101.7 and list down only the country code corresponding to each IP Address in tabular form. <br>
+        #ExamplePrompt Use Scout to create a report of foundation detail of the following IPs 185.220.100.240, 185.220.101.7 and list down only the overall rating corresponding to each IP Address in tabular form. <br>
+        #ExamplePrompt Use Scout to create a report of foundation detail of the following IPs 185.220.100.240, 185.220.101.7 and list down only tags names corresponding to each IP Address in tabular form. Multiple tags should be combined as a comma-separated string in a single column corresponding to each IP address. It should not include the children's information. <br>
+        #ExamplePrompt Use Scout to create a report of foundation detail of the following IPs 185.220.100.240, 185.220.101.7 and after the API response, list down only autonomous system names corresponding to each IP Address in tabular form. Re-format the autonomous system name in double quotes. <br>
+        #ExamplePrompt Use Scout to create a report of foundation detail of the following IPs 185.220.100.240, 185.220.101.7. List down the rating and message in separate rows. Create a new row for each rating and its message corresponding to the IP Address. <br>
+        #ExamplePrompt Use Scout to create a report of IPs 185.220.100.240, 185.220.101.7 and list down the tags associated with each IP address in tabular form. <br>
+        #ExamplePrompt Use Scout to create a report of IPs 185.220.100.240, 185.220.101.7 and list down the country associated with each IP address in tabular form. <br>
+        #ExamplePrompt Use Scout to create a report of IPs 185.220.100.240, 185.220.101.7 and list down the overall risk associated with each IP address in tabular form. <br>
+
+      parameters:
+        - name: ips
+          in: query
+          description: "IP Addresses : The Multiple IP Addresses or it can be a single IP Address. It is a comma-separated IP address."
+          required: true
+          schema:
+            type: array
+            items:
+              type: string
+              description: "The Multiple IP addresses or it can be a single IP Address."
+          example: ["8.8.8.8", "8.8.4.4", "47.156.224.38", "185.220.100.240", "185.220.101.7", "2.57.168.100"]
+          style: form
+          explode: false
+      responses:
+        200:
+          description: "Success."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FoundationAPIResponse"
+        400:
+          description: "Bad Request - One or more issues were found with your search parameters or the request was malformed."
+        401:
+          description: "Authentication Error - There was an error with your username and/or password or authorization token."
+        403:
+          description: "Authorization Error - You are not authorized to view this resource."
+        429:
+          description: "Request Rate Exceeded - The maximum of 1 request(s) per second was exceeded. OR Maximum concurrent requests have been exceeded. OR You have exceeded the query limit."
+        500:
+          description: "Internal Error - There was an internal server error. Please contact support to investigate this."
+  /api/scout/ip/{ip}/details:
+    get:
+      operationId: "ScoutIPDetailsAPI"
+      summary: "The IP details API provide IP information such as identity, communication (comms), passive DNS, open ports, x.509 certificate, fingerprints, WHOIS and summary"
+      description: |
+        Provide IP information such as identity, communication (comms), passive DNS, open ports, x.509 certificate, fingerprints, WHOIS and summary
+
+        The  IP detail endpoint allows users to retrieve a comprehensive report about a specific IP address. The report includes detailed information about the IP address's communication history, including open ports, protocols, and associated domains. 
+        Users can get the IP address's X.509 certificates, fingerprints, and associated whois data. 
+        By specifying the start and end dates for the response, users can gain insights into the IP address's relationships with specific times. 
+        Additionally, users can specify the number of days for which the report should be generated, allowing them to analyze the IP address's history in more detail.
+        Scout is a threat investigation and hunting platform used to identify and track malicious infrastructure on the internet. By using the IP detail endpoint the user can find the following things about the IP address.
+        
+        The details page separates information about a searched IP Address into various sections.
+        Summary: The summary section shows summary information for the queried IP Address.
+        Communication (Comms): The communications section contains aggregated network traffic information for the queried IP Address.
+        Open Ports: The open ports section contains open port banner information obtained from devices connected to the Internet. This data is continuously updated as multiple servers scan IP address ranges for open ports and attempt to retrieve information on the service it is advertising. The banner field can contain items like the returned web server header, SSH banner or X.509 PEM certificate and the service field may contain the identified service tied to the banner (ssh, HTTP).
+        PDNS: The Passive Domain Name System (PDNS) section contains Passive DNS resource records returned by public DNS servers. The Passive Domain Name System (PDNS) dataset contains many different record types. It can be used to establish which A records have been observed for a domain of interest, which name servers have been tied to a certain domain and which MX (mail server) or SOA records are known. These records are collected by passive monitoring of DNS query responses.
+        X.509: The X.509 section contains information on public key infrastructure (PKI) digital certificates collected through active probing of devices running SSL on public IP addresses.
+        Fingerprints: The fingerprints section tab contains the three possible fingerprint hash values are JA3, JA3S, and JARM. The JA3 fingerprint dataset contains passive a TLS (and predecessor SSL) fingerprint for the client (JA3) and a fingerprint for the server (JA3S). This dataset can be used to identify the likely application used by the client and server, as well as identify IP addresses of command and control servers that use a distinctive JA3 fingerprint. The JARM fingerprint dataset contains active/scanning of candidate IP addresses and the resultant TLS session negotiation between the client and server. When the scan initiates 10 TLS Client Hello packets a candidate IP address and captures specific attributes of the TLS Server Hello responses a TLS session. During the handshake, the client shares the TLS libraries/methods it supports. The server shares which libraries/methods it supports. The TLS negotiations are exchanged in clear text, allowing the supported libraries to identify likely applications used by the client and server. The distinct IPs column indicates we have observed the fingerprint hash on the following number of IPs during the search period.
+        Whois: The whois section shows Whois information for the IP Address.
+
+        #ExamplePrompt Use Scout to analyze the IP detail of 192.42.116.179 for the identity section. <br>
+        #ExamplePrompt Use Scout to analyze the IP detail of 192.42.116.179 for the whois section and ignore the parameters that have empty strings. <br>
+        #ExamplePrompt Use Scout to analyze the IP detail of 192.42.116.179 for whois section and give me the only details for cidr and org name. <br>
+        #ExamplePrompt Use Scout to analyze the IP detail of 192.42.116.179 for the communication section for the last 1 day and show top 2 results. Only includes the details of peer IP and local IP. <br>
+        #ExamplePrompt Use Scout to analyze the IP detail of 192.42.116.179 for the Passive Domain Name System (PDNS) section. <br>
+        #ExamplePrompt Use Scout to analyze the IP detail of 192.42.116.179 for the open port section between 23 June 2024 and 24 June 2024. And give me the list of ports. <br>
+        #ExamplePrompt Use Scout to analyze the IP detail of 198.49.23.145 for the x509 section and list down all ports, md5 and sha1 for each certificate. <br>
+        #ExamplePrompt Use Scout IP detail for 107.189.1.198. Give me the list of services that are associated with the HTTP protocol in the open port section. <br>
+        #ExamplePrompt Does this fingerprint 2ad2ad16d2ad2ad00042d42d000000332dc9cd7d90589195193c8bb05dt4fa exist for the IP 107.189.1.198. What are steps to be taken to prevent the threat from this IP? <br>
+        #ExamplePrompt Use Scout IP Detail to analyze the IP 107.189.1.198. Give me a report based on top tags for IP based on the First and Last Observations. <br>
+        #ExamplePrompt Use Scout IP details for 213.174.157.200. Analyze the top 10 countries and their peers. From that give me the percentage of traffic from Panama are there? <br>
+        #ExamplePrompt Use Scout IP details for 213.174.157.200. Analyze the top 10 countries and their peers. From that give me the percentage of traffic from Panama there for the last 1 day. <br>
+        #ExamplePrompt Use Scout IP details for 213.174.157.200. What types of communication protocols are discovered corresponding to the given IP? <br>
+        #ExamplePrompt Use Scout IP details for 213.174.157.200. Analyze the communication protocol where UDP is highest among the other protocols. Also, give me the list of dates where the UDP protocol is highest also provide the number of events. <br>
+        #ExamplePrompt Use Scout IP details for 213.174.157.200. Can you provide the weightage of each communication protocol corresponding to the given IP for the last day? <br>
+      parameters:
+        - name: ip
+          in: path
+          required: true
+          schema:
+            type: string
+          description: "IP Address: The Internet Protocol (IP) address being analyzed or queried for the request."
+          example: "192.168.1.1"
+        - name: start_date
+          in: query
+          required: false
+          schema:
+            type: string
+          description: "Start Date: The earliest date for results, formatted YYYY-MM-DD in UTC."
+          example: "2024-06-01"
+        - name: end_date
+          in: query
+          required: false
+          schema:
+            type: string
+          description: "End Date: The latest date for results, formatted YYYY-MM-DD in UTC."
+          example: "2024-07-01"
+        - name: days
+          in: query
+          required: false
+          schema:
+            type: number
+          example: 7
+          description: "Days : Relative offset in days from current time in UTC. It cannot exceed the maximum range of days. NOTE: This will take priority over start_date and end_date if all three are passed."
+        - name: size
+          in: query
+          required: false
+          schema:
+            type: number
+            default : 100
+          description: "Size: The size of the response, in records, to return."
+          example: 100
+        - name: sections
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - identity
+              - proto_by_ip
+              - summary
+              - comms
+              - open_ports
+              - pdns
+              - x509
+              - fingerprints
+              - whois
+          description: "Sections: A comma separated string that comprised of these identifiers: identity, summary, proto_by_ip, comms, open_ports, pdns,x509, fingerprints, whois"
+          example: "identity, summary, comms, open_ports"
+      responses:
+        200:
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IPDetailsResponse"
+        400:
+          description: "Bad Request - One or more issues were found with your search parameters or the request was malformed."
+        401:
+          description: "Authentication Error - There was an error with your username and/or password or authorization token."
+        403:
+          description: "Authorization Error - You are not authorized to view this resource."
+        429:
+          description: "Request Rate Exceeded - The maximum of 1 request(s) per second was exceeded. OR Maximum concurrent requests have been exceeded. OR You have exceeded the query limit."
+        500:
+          description: "Internal Error - There was an internal server error. Please contact support to investigate this."  
+  /api/scout/search:
+    get:
+      operationId: "ScoutSearchAPI"
+      summary: "The Scout search API provide domain and Scout search query information including country codes, autonomous system information, tags, whois data, open ports, PDNS, communication, service detail, fingerprints, X.509 certificate."
+      description: |
+        Provide Domain and Scout search query information including country codes, autonomous system information, tags, whois data, open ports, PDNS, communication, service detail, fingerprints, X.509 certificate.
+        
+        The Scout search endpoint a list of search results using the Scout query language. When a query is provided, this
+        endpoint will search based on the query. This endpoint leverages the Scout query language to return a list of
+        search results, which contains the list of IPs. Provide a query to initiate a search. Results can be filtered by
+        the 'query', 'start_date', and 'end_date' parameters. Optionally, use the 'days' parameter to specify a relative
+        date range. The 'size' parameter allows control over the number of records returned.
+
+        The query can accept the following formats, such as IP address, domain name, website, or an advanced query using selectors.
+        
+        ```
+        104.18.213.12
+        93[.]184[.]216[.]34
+        jquery.com
+        example[.]com
+        ```
+        
+        #ExamplePrompt Run the following scout query "198.49.23.145" for the last 2 days and give us the summary. <br>
+        #ExamplePrompt Use Scout to run a query comms.ip="104.18.213.12/24" and after that generate a report in table format displaying the domains. <br>
+        #ExamplePrompt Use Scout to run the following query "jquery.com" for the last 2 days and give us tags only. <br>
+        #ExamplePrompt Use Scout to run the query pdns.domain="*ngrok.io" and give the certs details in tabular format. <br>
+        #ExamplePrompt Use Scout to run the query meta.asn = "44477" pdns.domain = "*.com" x509.subject.cn = "*parking*", show top 2 results and List down all the open ports in tabular form. <br>
+        #ExamplePrompt Use Scout to analyze amazon.in and find out the top 5 Ips that are involved in the highest number of communications. <br>
+        #ExamplePrompt Use Scout to analyze google.com. List down certificate detail for top 5 IPS of last day.	<br>        
+        #ExamplePrompt What are the most recent WHOIS updates for this subtitleseeker.com? <br>
+        #ExamplePrompt What organization is associated with subtitleseeker.com in the WHOIS data? Use Scout. <br>
+      parameters:
+        - in: query
+          name: query
+          description: "Query: A simple or advanced query as described by the Scout query language."
+          required: true
+          schema:
+            type: string
+          example: "query=comms.ip=\"104.18.213.12/24\""
+        - in: query
+          name: start_date
+          description: "Start Date: The earliest date for results, formatted YYYY-MM-DD in UTC."
+          required: false
+          schema:
+            type: string
+            format: date
+          example: "2024-06-01"
+        - in: query
+          name: end_date
+          description: "End date: The latest date for results, formatted YYYY-MM-DD in UTC."
+          required: false
+          schema:
+            type: string
+            format: date
+          example: "2024-07-01"
+        - in: query
+          name: days
+          description: "Days : Relative offset in days from current time in UTC. It cannot exceed the maximum range of days. NOTE: This will take priority over start_date and end_date if all three are passed."
+          required: false
+          schema:
+            type: number
+          example: 7
+        - in: query
+          name: size
+          description: "Size: in records, of the search results."
+          required: false
+          schema:
+            type: number
+            default : 100
+          example: 1000
+      responses:
+        200:
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScoutSearchResponse"
+        400:
+          description: "Bad Request - One or more issues were found with your search parameters or the request was malformed."
+        401:
+          description: "Authentication Error - There was an error with your username and/or password or authorization token."
+        403:
+          description: "Authorization Error - You are not authorized to view this resource."
+        429:
+          description: "Request Rate Exceeded - The maximum of 1 request(s) per second was exceeded. OR Maximum concurrent requests have been exceeded. OR You have exceeded the query limit. "
+        500:
+          description: "Internal Error - There was an internal server error. Please contact support to investigate this."
+  
+components:
+  schemas:
+    FoundationAPIResponse:
+      type: object
+      properties:
+        request_id:
+          type: string
+          description: "The unique identifier or ID of the request."
+          example: "b7787ab6-b8ee-5024-8e22-20cceb347ffa"
+        ips:
+          type: array
+          description: "IP Addresses, The IP addresses being analyzed or queried."
+          example: ["103.18.103.21"]
+          items:
+            type: string
+            description: "The IP address being analyzed or queried."
+            example: "103.18.103.21"
+        data:
+          type: array
+          description: "An array of objects, each containing detailed information or critical information about the queried IP addresses using Foundation API."
+          items:
+            type: object
+            description: "The list of data objects which contains critical information about the queried IP Addresses."
+            properties:
+              ip:
+                type: string
+                description: "The Internet Protocol (IP) address being analyzed or queried for the request."
+                example: "103.18.103.21"
+              country_code:
+                type: string
+                description:
+                  "The country where the IP address is registered, indicated by its two-letter country code."
+                example: "JP"
+              as_info:
+                type: array
+                description: "Autonomous System Information which contains Autonomous System Number and Autonomous System name."
+                items:
+                  type: object
+                  properties:
+                    asn:
+                      type: number
+                      description:
+                        "Each AS or Autonomous System is assigned a unique Autonomous System Number (ASN) by a Regional Internet Registry (RIR). This number is used to identify the AS on the internet."
+                      example: 7514
+                    as_name:
+                      type: string
+                      description:
+                        "This is a human-readable name assigned to an Autonomous System. It typically represents the organization or entity that owns and operates the Autonomous System."
+                      example: "MEX Computer Engineering & Consulting, Ltd., JP"
+              insights:
+                type: object
+                description: "Contains security-related information about the IP address."
+                properties:
+                  overall_rating:
+                    type: string
+                    description: "Overall rating of the IP address or A general assessment of the IP address."
+                    example: "suspicious"
+                  insights:
+                    type: array
+                    description: "An array of more detailed insights or findings related to the IP address such as rating and message."
+                    items:
+                      type: object
+                      properties:
+                        rating:
+                          type: string
+                          description: "The severity rating of an insight."
+                          example: "suspicious"
+                        message:
+                          type: string
+                          description: "A descriptive message providing context about the insight."
+                          example: "103.18.103.21 has been identified as a VPN Scanner, scanning for associated services."
+              tags:
+                type: array
+                description: "An array of tags that categorize the type of activity associated with the IP address."
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: number
+                      description: "A unique identifier or ID for the tag."
+                      example: 2
+                    name:
+                      type: string
+                      description: "The name of the tag that categorizes the type of activity."
+                      example: "scanner"
+                    children:
+                      type: array
+                      description: "A nested array of tags providing more granular categorization under the parent tag."
+                      items:
+                        type: object
+                        properties:
+                          id:
+                            type: number
+                            description: "A unique identifier or ID for the child tag."
+                            example: 264
+                          name:
+                            type: string
+                            description: "The name of the child tag."
+                            example: "vpn-scanner"
+                          children:
+                            type: array
+                            nullable: true
+                            example : null
+                            items:
+                              type: object
+                              description: "Additional level of child tag."
+        usage:
+          type: object
+          description: "Summary of usage and limits from the Scout API."
+          properties:
+            used_queries:
+              type: number
+              description: "The number of queries already used by the user."
+              example: 23
+            remaining_queries:
+              type: number
+              description: "The number of remaining queries that can be used by the user."
+              example: 49977
+            query_limit:
+              type: number
+              description: "The maximum number of times the user can query. It is the sum of used queries and remaining queries. If used queries exceed the query limit then the 429 status code will be returned with an error message of exceeding the query limit."
+              example: 50000
+            foundation_api_usage:
+              type: object
+              description: "The foundation API Returns critical information about an IP(s) that shows up in alerts or security incidents. This object will return the details about the foundation API usage."
+              properties:
+                used_queries:
+                  type: number
+                  description: "This API is for Foundation API which returns critical information about the IP address. The number of foundation API queries already used by the user."
+                  example: 13
+                remaining_queries:
+                  type: number
+                  description: "This API is for Foundation API which returns critical information about the IP address. The number of remaining queries that can be used by the user."
+                  example: 9887
+                query_limit:
+                  type: number
+                  description: "This API is for Foundation API which returns critical information about the IP address. The maximum number of times the user can query. It is the sum of used queries and remaining queries. If used queries exceed the query limit then the 429 status code will be returned with an error message of exceeding the query limit."
+                  example: 10000
+            ai_insights_usage:
+              type: object
+              description: "The AI insights usage is an object that will return the details about the AI insights usage."
+              properties:
+                used_queries:
+                  type: number
+                  description: "The number of AI insights queries already used by the user."
+                  example: 0
+                remaining_queries:
+                  type: number
+                  description: "The number of remaining AI insights queries that can be used by the user."
+                  example: 0
+                query_limit:
+                  type: number
+                  description: "The maximum number of times the user can query AI insights. It is the sum of used queries and remaining queries. If used queries exceed the query limit then the 429 status code will be returned with an error message of exceeding the query limit."
+                  example: 0
+    IPDetailsResponse:
+      type: object
+      description: "An Object of IP details response which contains details of the individual IP address."
+      properties:
+        request_id:
+          type: string
+          description: "The unique identifier or ID of the request."
+          example: "93fd5791-12fd-5de8-968c-4e8e82241b6d"
+        ip:
+          type: string
+          description: "The Internet Protocol (IP) address being analyzed or queried for the request."
+          example: "171.25.193.77"
+        size:
+          type: number
+          description: "It is the total number of objects in the section."
+          example: 1000
+        start_date:
+          type: string
+          description: "Start Date, The earliest date for results, formatted YYYY-MM-DD in UTC."
+          example: "2024-07-01"
+        end_date:
+          type: string
+          description: "End Date, The latest date for results, formatted YYYY-MM-DD in UTC."
+          example: "2024-07-03"
+        sections:
+          type: array
+          description: "Sections, A comma separated string that comprised of these identifiers: identity, summary, proto_by_ip, comms, open_ports, pdns, x509, fingerprints, whois"
+          example: ["identity", "summary", "proto_by_ip", "comms", "open_ports", "pdns", "x509", "fingerprints", "whois"]
+          items:
+            type: string
+            description: "Sections."
+        usage:
+          type: object
+          description: "Summary of usage and limits from the Scout API."
+          properties:
+            used_queries:
+              type: number
+              description: "The number of queries already used by the user."
+              example: 24
+            remaining_queries:
+              type: number
+              description: "The number of remaining queries that can be used by the user."
+              example: 49976
+            query_limit:
+              type: number
+              description:
+                "The maximum number of times a user can query the API. It is the sum of used queries and remaining queries. If used queries exceed the query limit then the 429 status code will be returned with an error message of exceeding the query limit."
+              example: 50000
+            foundation_api_usage:
+              type: object
+              description: "The foundation API usage detail."
+              properties:
+                used_queries:
+                  type: number
+                  description: "The number of foundation API queries already used by the user."
+                  example: 13
+                remaining_queries:
+                  type: number
+                  description: "The number of remaining foundation API queries that can be used by the user."
+                  example: 9987
+                query_limit:
+                  type: number
+                  description: "The maximum number of times a user can query the foundation API. It is the sum of used queries and remaining queries. If used queries exceed the query limit then the 429 status code will be returned with an error message of exceeding the query limit."
+                  example: 10000
+            ai_insights_usage:
+              type: object
+              description: "The AI insights usage is an object that will return the details about the AI insights usage."
+              properties:
+                used_queries:
+                  type: number
+                  description: "The number of AI insights queries already used by the user."
+                  example: 0
+                remaining_queries:
+                  type: number
+                  description: "The number of remaining AI insights queries that can be used by the user."
+                  example: 0
+                query_limit:
+                  type: number
+                  description: "The maximum number of times the user can query AI insights. It is the sum of used queries and remaining queries. If used queries exceed the query limit then the 429 status code will be returned with an error message of exceeding the query limit."
+                  example: 0
+        identity:
+          type: object
+          properties:
+            tags:
+              type: object
+              description: "Optional metadata tags related to the identity, used for categorization or additional context."
+              example: null
+            reverse_hostnames:
+              type: array
+              description: "List of reverse DNS hostnames associated with the identity's IP address. Useful for identifying domains that may resolve to potentially malicious IP addresses."
+              items:
+                type: string
+              example: [ "14.tor-exit.nothingtohide.nl." ]
+            asn:
+              type: integer
+              example: 1101
+              description: "The Autonomous System Number (ASN) associated with the IP address. ASNs help identify the network and its owner, which can be crucial for tracking the source of suspicious activity."
+            as_name:
+              type: string
+              example: "IP-EEND-AS"
+              description: "The name of the Autonomous System (AS). Provides a human-readable identifier for the network, aiding in identifying networks involved in security incidents."
+            net_name:
+              type: string
+              example: "TOR-EXIT-NTH"
+              description: "The name of the network. Can be used to identify networks known for hosting malicious activity or part of a Tor exit node, indicating potential anonymization attempts."
+            org_name:
+              type: string
+              example: "Nothing to hide"
+              description: "The name of the organization owning the IP address. Important for contacting the responsible party in case of security breaches or for attribution in security investigations."
+        whois:
+          type: object
+          properties:
+            modified:
+              type: string
+              description: "Date of last modification in the format YYYY-MM-DD."
+              example: "2023-02-06"
+            asn:
+              type: number
+              description: "Autonomous System Number (ASN) associated with the IP address."
+              example: 1101
+            cidr:
+              type: string
+              description: "CIDR notation or Classless Inter-Domain Routing notation for the IP address."
+              example: "171.25.193.0/24"
+            as_name:
+              type: string
+              description: "Autonomous system name associated with the ASN."
+              example: "IP-EEND-AS"
+            bgp_asn:
+              type: number
+              description: "Border Gateway Protocol Autonomous System Number (BGP ASN) or BGP AS number."
+              example: 1101
+            bgp_asn_name:
+              type: string
+              description: "Border Gateway Protocol Autonomous System Name or BGP AS name."
+              example: "IP-EEND-AS IP-EEND BV, NL"
+            net_name:
+              type: string
+              description: "Network name associated with the IP address."
+              example: "TOR-EXIT-NTH"
+            net_handle:
+              type: string
+              description: "Network handle associated with the IP address."
+              example: "NET-8-8-8-0-2"
+            description:
+              type: string
+              description: "Network description associated with the IP address."
+              example: "[\"https://nothingtohide.nl\",\"Amsterdam\"]"
+            cc:
+              type: string
+              description: "Country code associated with the IP address."
+              example: "NL"
+            city:
+              type: string
+              description: "City associated with the IP address."
+              example: "Mountain View"
+            address:
+              type: string
+              description: "Address associated with the IP address."
+              example: "[\"1600 Amphitheatre Parkway\"]"
+            abuse_contact_id:
+              type: string
+              description: "Abuse contact ID associated with the IP address."
+              example: "CTSL7-RIPE"
+            about_contact_role:
+              type: string
+              description: "About contact role associated with the IP address."
+              example: "CIA TRIAD SECURITY LLC"
+            about_contact_person:
+              type: string
+              description: "About contact person associated with the IP address."
+              example: "CIA TRIAD SECURITY LLC"
+            about_contact_email:
+              type: string
+              description: "About contact email associated with the IP address."
+              example: "abusecontact@relayon.org"
+            about_contact_phone:
+              type: string
+              description: "About contact phone associated with the IP address."
+              example: "+1-650-253-0000"
+            about_contact_country:
+              type: string
+              description: "About contact country associated with the IP address."
+              example: "US"
+            about_contact_city:
+              type: string
+              description: "About contact city associated with the IP address."
+              example: "Mountain View"
+            about_contact_address:
+              type: string
+              description: "About contact address associated with the IP address."
+              example: "[\"Dummy address for CTSL7-RIPE\"]"
+            admin_contact_id:
+              type: string
+              description: "Admin contact ID associated with the IP address."
+              example: "CTSL6-RIPE"
+            admin_contact_role:
+              type: string
+              description: "Admin contact role associated with the IP address."
+            admin_contact_person:
+              type: string
+              description: "Admin contact person associated with the IP address."
+              example: "CIA TRIAD SECURITY LLC"
+            admin_contact_email:
+              type: string
+              description: "Admin contact email associated with the IP address."
+            admin_contact_phone:
+              type: string
+              description: "Admin contact phone associated with the IP address."
+            admin_contact_country:
+              type: string
+              description: "Admin contact country associated with the IP address."
+              example: "+1"
+            admin_contact_city:
+              type: string
+              description: "Admin contact city associated with the IP address."
+              example: "Wilmington"
+            admin_contact_address:
+              type: string
+              description: "Admin contact address associated with the IP address."
+              example: "[\"2701 Centerville Road\",\"New Castle County\",\"Wilmington\",\"Delaware 19808\",\"USA\"]"
+            tech_contact_id:
+              type: string
+              description: "Tech contact ID associated with the IP address."
+              example: "CTSL6-RIPE"
+            tech_contact_role:
+              type: string
+              description: "Technical contact role associated with the IP address."
+            tech_contact_person:
+              type: string
+              description: "Technical contact person associated with the IP address."
+              example: "CIA TRIAD SECURITY LLC"
+            tech_contact_email:
+              type: string
+              description: "Technical contact email associated with the IP address."
+              example: "as@lists.f3netze.de"
+            tech_contact_phone:
+              type: string
+              description: "Technical contact phone number associated with the IP address."
+              example: "+49 40 59452356"
+            tech_contact_country:
+              type: string
+              description: "Country of the technical contact associated with the IP address."
+              example: "Germany"
+            tech_contact_city:
+              type: string
+              description: "City of the technical contact associated with the IP address."
+              example: "Hassfurt"
+            tech_contact_address:
+              type: string
+              description: "Address of the technical contact associated with the IP address."
+              example: "[\"2701 Centerville Road\",\"New Castle County\",\"Wilmington\",\"Delaware 19808\",\"USA\"]"
+            org_id:
+              type: string
+              description: "Organization ID associated with the IP address."
+              example: "ORG-NTH3-RIPE"
+            org_name:
+              type: string
+              description: "Organization name associated with the IP address."
+              example: "Nothing to hide"
+            org_email:
+              type: string
+              description: "Email address of the organization associated with the IP address."
+              example: "abuse@nothingtohide.nl,mail@nothingtohide.nl"
+            org_phone:
+              type: string
+              description: "Phone number of the organization associated with the IP address."
+              example: "+1-650-253-0000"
+            org_country:
+              type: string
+              description: "Country of the organization associated with the IP address."
+              example: "NL"
+            org_city:
+              type: string
+              description: "City of the organization associated with the IP address."
+              example: "POMONA"
+            org_address:
+              type: string
+              description: "Address of the organization associated with the IP address."
+              example: "Marterweide 21"
+            mnt_by_email:
+              type: string
+              description: "Email address of the maintainer of the IP address."
+            mnt_lower_email:
+              type: string
+              description: "Email address of the lower maintainer of the IP address."
+            mnt_router_email:
+              type: string
+              description: "Email address of the router maintainer of the IP address."
+        communications:
+          type: object
+          properties:
+            event_count:
+              type: number
+              description: "The total number of events associated with communication with all peer IP addresses."
+              example: 3164655
+            peers:
+              type: array
+              description: "The list of peer IP addresses associated with communication."
+              items:
+                type: object
+                properties:
+                  proto:
+                    type: number
+                    description: "The protocol number used in this communication."
+                    example: 6
+                  proto_text:
+                    type: string
+                    description: "The text representation of the protocol used in this communication."
+                    example: "TCP"
+                  local:
+                    type: object
+                    properties:
+                      ip:
+                        type: string
+                        description: "The local IP address associated with communication."
+                        example: "171.25.193.77"
+                      min_port:
+                        type: number
+                        description: "The minimum port number used by the local IP address in communication."
+                        example: 10000
+                      max_port:
+                        type: number
+                        description: "The maximum port number used by the local IP address in communication."
+                        example: 65535
+                      country_codes:
+                        type: array
+                        description: "A list of country codes associated with the local IP address in communication."
+                        items:
+                          type: string
+                        example: [ "NL" ]
+                      as_info:
+                        type: array
+                        description: "A list of autonomous system information associated with the local IP address in communication."
+                        items:
+                          type: object
+                          properties:
+                            asn:
+                              type: number
+                              description: "The autonomous system number associated with the local IP address in communication."
+                              example: 1101
+                            as_name:
+                              type: string
+                              description: "The name of the autonomous system associated the local IP address in communication."
+                              example: "IP-EEND-AS IP-EEND BV, NL"
+                      tags:
+                        type: array
+                        description: "A list of tags associated with the local IP address in communication."
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: number
+                              description: "The ID of the tag associated with the local IP address in communication."
+                              example: 2
+                            name:
+                              type: string
+                              description: "The name of the tag associated with the local IP address in communication."
+                              example: "scanner"
+                            children:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  id:
+                                    type: number
+                                    description: "The ID of the child tag associated with the local IP address in communication."
+                                    example: 264
+                                  name:
+                                    type: string
+                                    description: "The name of the child tag associated with the local IP address in communication."
+                                    example: "vpn-scanner"
+                                  children:
+                                    type: array
+                                    nullable: true
+                                    example : null
+                                    items:
+                                      type: object
+                                      description: "Additional level of child tag."
+                      unique_ports:
+                        type: number
+                        description: "The number of unique ports used in the local IP address in communication."
+                        example: 49918
+                      top_services:
+                        type: array
+                        description: "A list of top services associated with the local IP address in communication."
+                        items:
+                          type: object
+                          properties:
+                            service_name:
+                              type: string
+                              description: "The name of the top service associated with local IP address in communication."
+                              example: "httpx"
+                            port:
+                              type: number
+                              description: "The port number associated with the top service used by the local IP address."
+                              example: 65535
+                            proto_number:
+                              type: number
+                              description: "The protocol number associated with the top service used by the local IP address."
+                              example: 6
+                            description:
+                              type: string
+                              description: "A description of the top service used by the local IP address."
+                              example: "HTTPX"
+                  peer:
+                    type: object
+                    properties:
+                      ip:
+                        type: string
+                        description: "The peer IP address associated with communication."
+                        example: "149.202.88.23"
+                      min_port:
+                        type: number
+                        description: "The minimum port number used by the peer IP address in communication."
+                        example: 443
+                      max_port:
+                        type: number
+                        description: "The maximum port number used by the peer IP address in communication."
+                        example: 443
+                      country_codes:
+                        type: array
+                        description: "A list of country codes associated with the peer IP address in communication."
+                        items:
+                          type: string
+                        example: [ "NL" ]
+                      as_info:
+                        type: array
+                        description: "A list of autonomous system information associated with the peer IP address in communication."
+                        items:
+                          type: object
+                          properties:
+                            asn:
+                              type: number
+                              description: "The autonomous system number associated with the peer IP address in communication."
+                              example: 16276
+                            as_name:
+                              type: string
+                              description: "The name of the autonomous system associated with the peer IP address in communication."
+                              example: "OVH, FR"
+                      tags:
+                        type: array
+                        description: "A list of tags associated with the peer IP address in communication."
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: number
+                              description: "The ID of the tag associated with the peer IP address in communication."
+                              example: 82
+                            name:
+                              type: string
+                              description: "The name of the tag associated with the peer IP address in communication."
+                              example: "cloud"
+                            children:
+                              type: array
+                              description: "A nested array of tags providing more granular categorization under the parent tag."
+                              items:
+                                type: object
+                                properties:
+                                  id:
+                                    type: number
+                                    description: "The ID of the child tag associated with the peer IP address in communication."
+                                    example: 1034
+                                  name:
+                                    type: string
+                                    description: "The name of the child tag associated with the peer IP address in communication."
+                                    example: "ovh"
+                                  children:
+                                    type: array
+                                    nullable: true
+                                    example : null
+                                    items:
+                                      type: object
+                                      description: "Additional level of child tag."
+                      unique_ports:
+                        type: number
+                        description: "The number of unique ports used by the peer IP address in communication."
+                        example: 1
+                      top_services:
+                        type: array
+                        description: "A list of top services used by the peer IP address in communication."
+                        items:
+                          type: object
+                          properties:
+                            service_name:
+                              type: string
+                              description: "The name of the top service used by the peer IP address in communication."
+                              example: "https"
+                            port:
+                              type: number
+                              description: "The port number associated with the top service used by the peer IP address."
+                              example: 443
+                            proto_number:
+                              type: number
+                              description: "The protocol number associated with the top service used by the peer IP address."
+                              example: 6
+                            description:
+                              type: string
+                              description: "A description of the protocol used by the top service used by the peer IP address."
+                              example: "http protocol over TLS/SSL"
+                  event_count:
+                    type: number
+                    description: "The total number of events associated in the communication."
+                    example: 153143
+                  first_seen:
+                    type: string
+                    description: "The date when the communication was first seen."
+                    example: "2024-07-07"
+                  last_seen:
+                    type: string
+                    description: "The date when the communication was last seen."
+                    example: "2024-07-07"
+        pdns:
+          type: object
+          properties:
+            event_count:
+              type: integer
+              description: "Total number of Passive Domain Name System (PDNS) events."
+              example: 394905
+            pdns:
+              type: array
+              description: "A list of Passive Domain Name System (PDNS) event details."
+              items:
+                type: object
+                properties:
+                  ip:
+                    type: string
+                    description: "The IP address involved in the DNS query. Key for tracking the source or destination of network communications."
+                    example: "171.25.193.77"
+                  domain:
+                    type: string
+                    description: "The fully qualified domain name (FQDN) resolved in the DNS query. Important for identifying potentially malicious domains."
+                    example: "14.tor-exit.nothingtohide.nl"
+                  root:
+                    type: string
+                    description: "The root or second-level domain associated with the query. Useful for identifying domain registration patterns."
+                    example: "nothingtohide.nl"
+                  tld:
+                    type: string
+                    description: "The top-level domain (TLD) of the domain name, which can indicate the domain's geographical or organizational category."
+                    example: "nl"
+                  type:
+                    type: string
+                    description: "The DNS record type, such as A, AAAA, CNAME, etc., indicating the nature of the query."
+                    example: "A"
+                  registrar:
+                    type: string
+                    description: "The registrar for the domain, if available. Can be used in investigations to trace domain ownership."
+                    example: "MarkMonitor Inc."
+                  domain_created:
+                    type: string
+                    format: date
+                    description: "The creation date of the domain, providing insight into the age of the domain. Older domains may have more established reputations."
+                    example: "2018-04-16"
+                  domain_expires:
+                    type: string
+                    format: date
+                    description: "The expiration date of the domain, which can indicate if a domain is recently renewed or soon to expire."
+                    example: "2025-04-16"
+                  nameservers:
+                    type: array
+                    description: "List of name servers associated with the domain. Changes in name servers can indicate domain hijacking attempts."
+                    items:
+                      type: object
+                      properties:
+                        root:
+                          type: string
+                          description: "The root or second-level domain associated with the query. Useful for identifying domain registration patterns."
+                        nameservers:
+                          type: array
+                          description: "List of name servers associated with the domain. Changes in name servers can indicate domain hijacking attempts."
+                          items:
+                            type: string
+                          example: [ "ns0.dynu.com", "ns1.dynu.com", "ns2.dynu.com", "ns3.dynu.com", "ns5.dynu.com", "ns6.dynu.com" ]
+                  country_codes:
+                    type: array
+                    description: "List of country codes associated with the IP or domain, useful for geo-locational analysis."
+                    items:
+                      type: string
+                    example: [ "NL" ]
+                  as_info:
+                    type: array
+                    description: "List of autonomous systems associated with the IP address."
+                    items:
+                      type: object
+                      properties:
+                        asn:
+                          type: integer
+                          description: "The Autonomous System Number (ASN) linked to the IP, providing insight into the network's management and location."
+                          example: 1101
+                        as_name:
+                          type: string
+                          nullable: true
+                          description: "The name of the Autonomous System, which can offer clues about the network's ownership and operational scope."
+                      description: "Autonomous System (AS) information for the IP, aiding in understanding the network's ownership and geography."
+                  tags:
+                    type: object
+                    description: "Tags related to the Passive Domain Name System (PDNS) entry, for categorization or additional context."
+                  distinct_ips:
+                    type: integer
+                    description: "The number of distinct IP addresses associated with the domain record, indicating diversity of infrastructure."
+                    example: 1
+                  active_days:
+                    type: integer
+                    description: "The number of days the DNS record was actively resolved, useful for identifying persistence or temporal patterns."
+                    example: 1
+                  event_count:
+                    type: integer
+                    description: "The number of DNS events associated with this specific record, useful for identifying activity levels."
+                    example: 6
+                  first_seen:
+                    type: string
+                    format: date
+                    description: "The date when the DNS record was first observed, providing a timeline for the domain or IP address activity."
+                    example: "2024-07-07"
+                  last_seen:
+                    type: string
+                    format: date
+                    description: "The most recent date the DNS record was observed helpful in assessing the current of the record or the age of the data."
+                    example: "2024-07-10"
+        fingerprints:
+          type: object
+          properties:
+            event_count:
+              type: integer
+              description: "Total number of fingerprinting events."
+              example: 394905
+            fingerprints:
+              type: array
+              description: "List of fingerprints associated with the IP address."
+              items:
+                type: object
+                properties:
+                  ip:
+                    type: string
+                    description: "IP address associated with the fingerprint."
+                    example: "171.25.193.77"
+                  type:
+                    type: string
+                    description: "Type of the fingerprint, e.g., ja3s."
+                    example: "ja3s"
+                  fingerprint:
+                    type: string
+                    description: "The fingerprint value."
+                    example: "eb1d94daa7e0344597e756a1fb6e7054"
+                  port:
+                    type: integer
+                    description: "Port number associated with the fingerprint."
+                    example: 443
+                  first_seen:
+                    type: string
+                    format: date
+                    description: "The first date the fingerprint was observed."
+                    example: "2024-06-12"
+                  last_seen:
+                    type: string
+                    format: date
+                    description: "The last date the fingerprint was observed."
+                    example: "2024-07-11"
+                  distinct_ips:
+                    type: integer
+                    description: "Number of distinct IP addresses associated with the fingerprint."
+                    example: 22738
+                  active_days:
+                    type: integer
+                    description: "Number of days the fingerprint was active."
+                    example: 30
+                  event_count:
+                    type: integer
+                    description: "Number of events associated with this specific fingerprint."
+                    example: 123065
+        open_ports:
+          type: object
+          properties:
+            event_count:
+              type: integer
+              description: "Total number of events associated with open ports."
+              example: 3
+            unique_ports:
+              type: integer
+              description: "Number of unique open ports."
+              example: 2
+            open_ports:
+              type: array
+              description: "A list of open ports associated with the IP address."
+              items:
+                type: object
+                properties:
+                  ip:
+                    type: string
+                    description: "IP address associated with the open port."
+                    example: "171.25.193.77"
+                  port:
+                    type: number
+                    description: "Port number."
+                    example: 53
+                  protocol:
+                    type: number
+                    description: "Numeric representation of the protocol used by the open port."
+                    example: 17
+                  protocol_text:
+                    type: string
+                    description: "Textual representation of the protocol used by the open port."
+                    example: "UDP"
+                  service:
+                    type: string
+                    description: "Service identified running on the open port."
+                    example: "domain"
+                  banner:
+                    type: string
+                    description: "Banner information retrieved from the open port."
+                    example: "Recursion: enabled"
+                  banner_sha1:
+                    type: string
+                    description: "SHA1 hash of the banner information."
+                    example: "a1742f5e78e104c6182e08826de4f88a2df21d5b"
+                  first_seen:
+                    type: string
+                    format: date
+                    description: "The first date the open port was observed."
+                    example: "2024-06-12"
+                  last_seen:
+                    type: string
+                    format: date
+                    description: "The last date the open port was observed."
+                    example: "2024-07-11"
+                  country_codes:
+                    type: array
+                    description: "List of country codes associated with the IP address."
+                    items:
+                      type: string
+                    example: [ "US" ]
+                  as_info:
+                    type: array
+                    description: "List of autonomous systems associated with the IP address."
+                    items:
+                      type: object
+                      properties:
+                        asn:
+                          type: number
+                          description: "The Autonomous System Number (ASN) linked to the IP, providing insight into the network's management and location."
+                          example: 198093
+                        as_name:
+                          type: string
+                          description: "The name of the Autonomous System, which can offer clues about the network's ownership and operational scope."
+                          example: "DFRI-AS Foreningen for digitala fri- och rattigheter, SE"
+                  tags:
+                    type: array
+                    description: "Tags associated with the open port, if any."
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: number
+                          description: "The unique identifier of the tag."
+                          example: 6
+                        name:
+                          type: string
+                          description: "The name of the tag."
+                          example: "proxy"
+                        children:
+                          type: array
+                          nullable: true
+                          example : null
+                          items:
+                            type: object
+                            description: "Additional level of child tag."
+                  event_count:
+                    type: number
+                    description: "Number of events associated with the specific open port."
+                    example: 576623
+        x509:
+          type: object
+          properties:
+            event_count:
+              type: integer
+              description: "Total number of events associated with the certificate."
+              example: 3
+            x509:
+              type: array
+              items:
+                type: object
+                properties:
+                  ip:
+                    type: string
+                    description: "The IP address where the certificate was observed."
+                    example: "171.25.193.77"
+                  issuer:
+                    type: string
+                    description: "The distinguished name of the certificate issuer."
+                    example: "CN=www.si2rvpc6fr4hd.com"
+                  issuer_common_name:
+                    type: string
+                    description: "The common name of the certificate issuer."
+                    example: "www.si2rvpc6fr4hd.com"
+                  common_name:
+                    type: string
+                    description: "The common name specified in the certificate, typically the domain name."
+                    example: "www.yohhvdzdcthyir7f4oy.net"
+                  altnames:
+                    type: array
+                    description: "Alternative names for the entity that the certificate represents."
+                    items:
+                      type: string
+                    example:
+                      - "*.dns.yohhvdzdcthyir7f4oy.com"
+                      - "8888.yohhvdzdcthyir7f4oy"
+                      - "dns.yohhvdzdcthyir7f4oy"
+                      - "dns.yohhvdzdcthyir7f4oy.com"
+                      - "dns64.dns.yohhvdzdcthyir7f4oy"
+                  serial:
+                    type: string
+                    description: "The serial number of the certificate."
+                    example: "8087928718449770964"
+                  human_readable:
+                    type: string
+                    description: "The human readable description of the certificate."
+                    example: "Certificate:\n    Data:\n        Version: 3 (0x2)\n        Serial Number: 16115816404043435608139631424403370993 (0xc1fcb184518c7e3866741236d6b73f1)\n    Signature Algorithm: SHA256-RSA\n        Issuer: C=US,O=DigiCert Inc,CN=DigiCert TLS RSA SHA256 2020 CA1\n        Validity\n            Not Before: Jan 13 00:00:00 2023 UTC\n            Not After : Feb 13 23:59:59 2024 UTC\n        Subject: C=US,ST=California,L=Los Angeles,O=Internet Corporation for Assigned Names and Numbers,CN=www.example.org\n        Subject Public Key Info:\n            Public Key Algorithm: RSA\n                Public-Key: (2048 bit)\n                Modulus:\n                    c2:80:77:89:59:b8:45:6f:ba:4a:d9:11:fa:7b:ad:\n                    c7:57:d0:7a:fb:b6:fa:dd:05:bb:a2:81:71:bb:e1:\n                    7f:21:d2:5f:2e:f0:d2:72:4e:75:34:f8:8d:62:e3:\n                    4a:da:51:90:d4:01:3d:9c:0c:c0:71:f7:e6:2f:b6:\n                    d6:07:67:26:d0:de:ff:17:ce:f0:85:fd:31:c1:66:\n                    ca:87:65:05:47:2a:5f:c0:ab:b8:8c:c3:bf:d0:17:\n                    7f:63:a3:5c:f0:46:fb:86:aa:fb:4d:d7:2a:5e:7f:\n                    9a:e0:13:97:7d:be:fb:7d:35:57:0d:5d:5e:81:98:\n                    35:ea:16:42:a2:d3:b0:74:f7:59:2d:ed:38:e7:fe:\n                    7a:1b:b3:36:e6:7e:ae:3f:9e:a6:16:83:de:53:01:\n                    4e:81:00:ae:bb:42:f5:1f:75:29:34:cd:e9:84:80:\n                    38:ae:3c:37:14:c0:f0:27:ce:30:52:b9:8a:dc:5f:\n                    22:a0:79:f8:4f:4e:49:04:e2:75:7c:aa:2f:2a:1e:\n                    03:ec:71:4c:a3:2a:61:fc:6f:ca:91:1e:93:5a:2e:\n                    78:08:58:f6:ee:bb:34:20:5d:9a:e6:af:c6:d7:f2:\n                    bf:0a:7b:fa:8e:92:77:e3:6c:7b:0c:40:86:64:4a:\n                    15:ec:70:d7:72:8e:63:30:e1:0b:ef:5a:30:97:2e:\n                    25\n                Exponent: 65537 (0x10001)\n        X509v3 extensions:\n            X509v3 Authority Key Identifier:\n                keyid:B7:6B:A2:EA:A8:AA:84:8C:79:EA:B4:DA:0F:98:B2:C5:95:76:B9:F4\n            X509v3 Subject Key Identifier:\n                B0:93:3F:E8:17:82:FD:6C:B2:B6:17:87:CB:E3:80:FE:82:9B:01:9E\n            X509v3 Subject Alternative Name:\n                DNS:www.example.org, DNS:example.net, DNS:example.edu, DNS:example.com, DNS:example.org, DNS:www.example.com, DNS:www.example.edu, DNS:www.example.net\n            X509v3 Key Usage: critical\n                Digital Signature, Key Encipherment\n            X509v3 Extended Key Usage:\n                Server Authentication, Client Authentication\n            X509v3 CRL Distribution Points:\n                Full Name:\n                  URI:http://crl3.digicert.com/DigiCertTLSRSASHA2562020CA1-4.crl, URI:http://crl4.digicert.com/DigiCertTLSRSASHA2562020CA1-4.crl\n            X509v3 Certificate Policies:\n                Policy: 2.23.140.1.2.2\n            Authority Information Access:\n                OCSP - URI:http://ocsp.digicert.com\n                CA Issuers - URI:http://cacerts.digicert.com/DigiCertTLSRSASHA2562020CA1-1.crt\n            X509v3 Basic Constraints:\n                CA:FALSE\n            RFC6962 Certificate Transparency SCT:\n                SCT [0]:\n                    Version: V1 (0x0)\n                    LogID: 7s3QZNXbGs7FXLedtM0TojKHRny87N7DUUhZRnEftZs=\n                    Timestamp: Jan 13 13:18:21.987 2023 UTC\n                    Signature Algorithm: SHA256-ECDSA\n                      30:45:02:21:00:aa:df:9f:2b:a8:c5:74:60:3a:b6:fd:04:5a:\n                      df:6b:6b:1d:16:60:15:78:ad:ef:63:81:98:2a:d3:38:b8:d9:\n                      05:02:20:40:61:d7:22:a9:3e:f8:17:d4:1a:de:13:4c:01:52:\n                      6a:e2:39:55:21:25:2e:fb:2a:01:75:f7:77:d3:db:ce:fb\n                SCT [1]:\n                    Version: V1 (0x0)\n                    LogID: c9meiRtMlnigIH1HneayxhzQUV5xGSqMa4AQesF3crU=\n                    Timestamp: Jan 13 13:18:22.111 2023 UTC\n                    Signature Algorithm: SHA256-ECDSA\n                      30:46:02:21:00:d7:64:94:14:ae:6b:80:ba:91:ce:f8:1c:af:\n                      b6:73:57:89:e5:f9:9b:7d:96:5a:00:cd:12:df:3d:ce:ef:48:\n                      f0:02:21:00:97:3d:bc:12:73:1d:6b:13:e0:63:15:ac:19:95:\n                      58:cb:8f:fd:4f:b0:cd:0a:41:07:2c:7c:70:d9:25:44:cb:c0\n                SCT [2]:\n                    Version: V1 (0x0)\n                    LogID: SLDja9qmRzQP5WoC+p0w6xxSActW3SyB2bu/qznYhHM=\n                    Timestamp: Jan 13 13:18:22.046 2023 UTC\n                    Signature Algorithm: SHA256-ECDSA\n                      30:45:02:21:00:de:5b:84:7b:61:a3:25:8c:27:70:90:07:fd:\n                      62:60:51:21:32:05:15:90:58:47:0c:cf:e7:94:4f:53:84:2c:\n                      21:02:20:0f:bc:f2:57:ca:9e:da:da:4c:f0:25:7d:cf:ed:fa:\n                      87:e5:79:28:de:b3:e1:0b:34:68:5d:87:7a:5b:e4:24:0a\n    Signature Algorithm: SHA256-RSA\n         59:e4:4a:d8:a9:82:ba:9a:4a:f1:63:0c:6d:76:26:75:b3:3c:\n         74:be:c5:f7:3d:a7:91:92:f8:cf:06:2d:58:10:ed:f3:b8:d6:\n         fc:6c:ff:13:96:32:cd:4f:e9:87:24:85:0b:74:a2:c2:f6:0f:\n         f5:a7:d8:7d:76:8a:ae:e9:c9:58:2b:6e:00:6f:b9:cd:24:ee:\n         c4:42:c5:4c:16:85:9d:34:61:39:23:bf:c6:8e:95:c9:84:a9:\n         b2:e5:41:0f:44:78:d7:95:b9:cf:d9:74:bf:58:4f:e7:16:ff:\n         7c:40:30:c4:6c:4e:22:4d:cb:83:67:3a:93:bf:2b:c5:c5:9c:\n         1a:f2:43:a1:25:3b:84:f6:f7:53:6e:a8:85:ae:de:14:74:91:\n         30:06:0d:f2:07:d4:c4:08:ba:43:64:c5:e2:3f:da:ac:c5:41:\n         af:a4:37:e8:42:76:74:f7:13:bb:4a:7d:36:59:81:9b:c7:44:\n         df:89:73:b9:33:42:e8:60:c2:4d:61:5d:12:5a:10:f6:ef:ff:\n         33:89:14:50:e8:d6:9f:c6:b9:5c:2b:35:db:ad:ed:dd:36:b6:\n         25:f2:95:8a:ac:69:3f:9a:fe:1a:f8:15:28:6d:ea:18:5a:c2:\n         d2:62:18:af:40:78:b5:fa:5e:09:8f:53:f9:cc:f8:23:a1:83:\n         31:23:f4:c6\n"
+                  subject:
+                    type: string
+                    description: "The distinguished name of the certificate subject."
+                    example: "CN=www.yohhvdzdcthyir7f4oy.net"
+                  not_after:
+                    type: string
+                    format: date
+                    description: "The date on which the certificate expires."
+                    example: "2024-09-05"
+                  not_before:
+                    type: string
+                    format: date
+                    description: "The date on which the certificate becomes valid."
+                    example: "2024-06-13"
+                  validity_period:
+                    type: string
+                    description: "The duration for which the certificate is valid."
+                    example: "84 Days"
+                  md5:
+                    type: string
+                    description: "The MD5 hash of the certificate."
+                    example: "9f81868bba0d290180ef84ad565298a3"
+                  sha1:
+                    type: string
+                    description: "The SHA-1 hash of the certificate."
+                    example: "1f1528180ba8155ddc4b720a73ecad4069c6b3e8"
+                  sha256:
+                    type: string
+                    description: "The SHA-256 hash of the certificate."
+                    example: "b03e303f1feb4854ae973cdf6c97fbc38a8447e542f41861d21bc28a6c95fb79"
+                  first_seen:
+                    type: string
+                    format: date
+                    description: "The date when the certificate was first observed."
+                    example: "2024-07-07"
+                  last_seen:
+                    type: string
+                    format: date
+                    description: "The most recent date the certificate was observed."
+                    example: "2024-07-07"
+                  port:
+                    type: number
+                    description: "The network port on which the certificate was observed."
+                    example: 10236
+                  self_signed:
+                    type: boolean
+                    description: "Indicates whether the certificate is self-signed."
+                    example: false
+                  country_codes:
+                    type: array
+                    description: "List of country codes associated with the IP or domain."
+                    items:
+                      type: string
+                    example:
+                      - "US"
+                  as_info:
+                    type: array
+                    description: "Autonomous System (AS) information for the IP, aiding in understanding the network's ownership and geography"
+                    items:
+                      type: object
+                      properties:
+                        asn:
+                          type: number
+                          description: "The Autonomous System Number (ASN) linked to the IP, providing insight into the network's management and location."
+                          example: 15169
+                        as_name:
+                          type: string
+                          description: "The name of the Autonomous System, which can offer clues about the network's ownership and operational scope."
+                          example: "DFRI-AS Foreningen for digitala fri- och rattigheter, SE"
+                  tags:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                          description: "The unique identifier of the tag."
+                          example: 176
+                        name:
+                          type: string
+                          description: "The name of the tag."
+                          example: "cdn"
+                        css_color:
+                          type: string
+                          description: "The CSS color code of the tag."
+                          example: "#8A532C"
+                        children:
+                          type: array
+                          items:
+                            type: object
+                          description: "A nested array of tags providing more granular categorization under the parent tag."
+                          properties:
+                            id:
+                              type: integer
+                              description: "The unique identifier of the child tag."
+                              example: 206
+                            name:
+                              type: string
+                              description: "The name of the child tag."
+                              example: "edgecast"
+                            css_color:
+                              type: string
+                              description: "The CSS color code of the child tag."
+                              example: "#9D6034"
+                            children:
+                              type: array
+                              nullable: true
+                              example : null
+                              items:
+                                type: object
+                                description: "Additional level of child tag."
+                  count:
+                    type: number
+                    description: "Count associated with x509."
+                    example: 6
+        summary:
+          type: object
+          properties:
+            total:
+              type: number
+              description: "Total number of results."
+              example: 1
+            ip:
+              type: string
+              description: "The Internet Protocol (IP) address being analyzed or queried for the request."
+              example: "171.25.193.77"
+            start_date:
+              type: string
+              description: "Start date, The earliest date for results, formatted YYYY-MM-DD in UTC."
+              example:  "2024-07-01"
+            end_date:
+              type: string
+              description: "End date, The latest date for results, formatted YYYY-MM-DD in UTC."
+              example: "2024-07-03"
+            geo_ip_cc:
+              type: string
+              description: "Country code based on Geolocation of the IP address."
+              example: "SE"
+            tags:
+              type: array
+              description: "List of tags associated with the IP address."
+              items:
+                type: object
+                properties:
+                  id:
+                    type: number
+                    description: "Unique identifier of the tag."
+                    example: 2
+                  name:
+                    type: string
+                    description: "Name of the tag."
+                    example: "scanner"
+                  children:
+                    type: array
+                    description: "A nested array of tags providing more granular categorization under the parent tag."
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: number
+                          description: "Unique identifier of the child tag."
+                          example: 264
+                        name:
+                          type: string
+                          description: "Name of the child tag."
+                          example: "vpn-scanner"
+                        children:
+                          type: array
+                          nullable: true
+                          example : null
+                          items:
+                            type: object
+                            description: "Additional level of child tag."
+            reverse_hostnames:
+              description: "Reverse hostnames associated with the IP address."
+              example:  "tor-exit-read-me.dfri.se."
+            bgp_asn:
+              type: number
+              description: "Border Gateway Protocol Autonomous System Number or BGP ASN."
+              example: 198093
+            bgp_asname:
+              type: string
+              description: "Border Gateway Protocol Autonomous System name or  BGP AS name."
+              example: "DFRI-AS Foreningen for digitala fri- och rattigheter, SE"
+            whois:
+              type: object
+              description: "WHOIS (pronounced as \"who is\") information about the IP address."
+              properties:
+                asn:
+                  type: number
+                  description: "Autonomous system number."
+                  example: 198093
+                as_name:
+                  type: string
+                  description: "Autonomous system name."
+                  example: "DFRI-AS"
+                net_name:
+                  type: string
+                  description: "Network name."
+                  example: "SE-TORNET"
+                org_name:
+                  type: string
+                  description: "Organization name."
+                  example: "Foreningen for digitala fri- och rattigheter"
+            pdns:
+              type: object
+              description: "Passive Domain Name System (PDNS) information related to the IP address."
+              properties:
+                total:
+                  type: number
+                  description: "Total number of results."
+                  example: 6
+                top_pdns:
+                  type: array
+                  description: "A list of the top Passive Domain Name System (PDNS) entries."
+                  items:
+                    type: object
+                    properties:
+                      event_count:
+                        type: number
+                        description: "Event count."
+                        example: 6
+                      domain:
+                        type: string
+                        description: "Domain."
+                        example: "14.tor-exit.nothingtohide.nl"
+                      first_seen:
+                        type: string
+                        description: "First seen date in Passive Domain Name System (PDNS)."
+                        example: "2024-07-07"
+                      last_seen:
+                        type: string
+                        description: "Last seen date in Passive Domain Name System (PDNS)."
+                        example: "2024-07-07"
+                      css_color:
+                        type: string
+                        description: "CSS colour code for displaying top Passive Domain Name System (PDNS)."
+                        example: "#ffe580"
+            open_ports:
+              type: object
+              description: "Information about open ports associated with the IP address."
+              properties:
+                total:
+                  type: number
+                  description: "Total number of open ports associated with the IP address."
+                  example: 2
+                unique_ports:
+                  type: number
+                  description: "Total number of unique ports associated with the IP address."
+                top_open_ports:
+                  type: array
+                  description: "A list of the top open ports associated with the IP address."
+                  items:
+                    type: object
+                    properties:
+                      event_count:
+                        type: number
+                        description: "The event count for the open port, representing the number of events or activities detected for given port."
+                        example: 1
+                      port:
+                        type: number
+                        description: "The port number, which is a unique identifier for the port and is used to establish connections."
+                        example: 444
+                      protocol:
+                        type: number
+                        description: "The protocol number associated with the open port, which can be used to identify the protocol used for communication."
+                        example: 6
+                      protocol_text:
+                        type: string
+                        description: "The protocol name associated with the open port which providing a textual representation of the protocol."
+                        example: "TCP"
+                      service:
+                        type: string
+                        description: "The service name associated with the open port, which can be used to identify the service running on given port."
+                        example: "snpp"
+                      inferred_service_name:
+                        type: string
+                        description: "The inferred service name associated with the open port."
+                        example: null
+                      first_seen:
+                        type: string
+                        description: "The first date the open port was observed."
+                        example: "2024-06-25"
+                      last_seen:
+                        type: string
+                        description: "The last date the open port was observed."
+                        example: "2024-06-25"
+                      css_color:
+                        type: string
+                        description: "CSS colour for displaying the port."
+                        example: "#d998ba"
+            certs:
+              type: object
+              description: "SSL (Secure Sockets Layer) certificates associated with the IP address."
+              properties:
+                top_certs:
+                  type: array
+                  description: "Top certificates associated with the IP address."
+                  items:
+                    type: object
+                    properties:
+                      issuer:
+                        type: string
+                        description: "The issuer of the certificate."
+                        example: "CN=www.si2rvpc6fr4hd.com"
+                      issuer_common_name:
+                        type: string
+                        description: "Common name of the issuer."
+                        example: "www.si2rvpc6fr4hd.com"
+                      common_name:
+                        type: string
+                        description: "Common name for the subject of the certificate."
+                        example: "www.yohhvdzdcthyir7f4oy.net"
+                      subject:
+                        type: string
+                        description: "Subject for whom the certificate is issued."
+                        example: "CN=www.yohhvdzdcthyir7f4oy.net"
+                      port:
+                        type: number
+                        description: "Port number on which the certificate is served."
+                        example: 853
+                      first_seen:
+                        type: string
+                        description: "The first date when the certificate was observed."
+                        example: "2024-06-19"
+                      last_seen:
+                        type: string
+                        description: "The last date when the certificate was observed."
+                        example: "2024-06-28"
+                      self_signed:
+                        type: boolean
+                        description: "Indicates if the certificate is self-signed."
+                        example: false
+                      not_before:
+                        type: string
+                        description: "The starting date from which the certificate is valid."
+                        example: "2024-06-03"
+                      not_after:
+                        type: string
+                        description: "The ending date until which the certificate is valid."
+                        example: "2024-08-26"
+                      valid_days:
+                        type: number
+                        description: "The number of days for which the certificate is valid."
+                        example: 84
+                      md5:
+                        type: string
+                        description: "MD5 hash of the certificate."
+                        example: "00e863c275928e4a1b128db6d5765e24"
+                      sha1:
+                        type: string
+                        description: "SHA-1 hash of the certificate."
+                        example: "25da3436c3e7f7bcd5dffaf38754d436fdfa91bd"
+                      sha256:
+                        type: string
+                        description: "SHA-256 hash of the certificate."
+                        example: "060a55396a8c76705c87d7b6df60695b7b2a4774f89ace4d60cb14cda435fa5d"
+                      css_color:
+                        type: string
+                        description: "CSS colour code associated with the certificate for display purposes."
+                        example: "#ffbd80"
+            tag_timeline:
+              type: object
+              description: "Timeline of tags associated with the IP address."
+              properties:
+                data:
+                  type: array
+                  description: "Timeline of tags associated with the IP address."
+                  items:
+                    type: object
+                    properties:
+                      tag:
+                        type: object
+                        properties:
+                          id:
+                            type: number
+                            description: "Tag Identifier or Tag ID."
+                            example: 2
+                          name:
+                            type: string
+                            description: "Tag name."
+                            example: "scanner"
+                          description:
+                            type: string
+                            description: "Tag detailed description."
+                            example: "IP addresses tagged as a SCANNER have been observed scanning the Internet. This scanning activity could potentially signify the presence of compromised machines, potentially harnessed by malicious actors to identify and exploit vulnerabilities in other systems connected to the network. Some of the IP addresses tagged as a SCANNER may have additional child tags that provide more insight into the activity. For example, SHODAN or CENSYS child tags may be used to tag IP addresses from known vendors that scan the Internet, or child tags such as SSH-SCANNER are used to identify scanning activity observed at scanning port 22 (SSH)."
+                          parent_ids:
+                            type: array
+                            description: "Parent tag IDs."
+                            items:
+                              type: number
+                          css_color:
+                            type: string
+                            description: "CSS colour code for the tag."
+                            example: "#046568"
+                          parents:
+                            type: array
+                            description: "Additional parent tags."
+                            items:
+                              type: object
+                              properties:
+                                id:
+                                  type: number
+                                  description: "Parent tag ID."
+                                  example: 1
+                                name:
+                                  type: string
+                                  description: "Parent tag name."
+                                  example: "scanner"
+                                description:
+                                  type: string
+                                  description: "Parent tag description."
+                                  example: "The scanner tag contains IP addresses that have been scanned by an automated scanner. This tag is used to identify the activity of the scanner."
+                                parent_ids:
+                                  description: "Parent tag IDs"
+                                css_color:
+                                  type: string
+                                  description: "CSS colour code for the parent tag."
+                                parents:
+                                  description: "Additional parent tags."
+                      first_seen:
+                        type: string
+                        description: "First seen date of the tag."
+                      last_seen:
+                        type: string
+                        description: "Last seen date of the tag."
+            insights:
+              type: object
+              description: "An object containing insights about IP addresses."
+              properties:
+                overall_rating:
+                  type: string
+                  description: "The overall rating of the IP address based on analysis."
+                  example: "suspicious"
+                total:
+                  type: number
+                  description: "The total number of results related to the IP address insights."
+                  example: 2
+                insights:
+                  type: array
+                  description: "An array of more detailed insights or findings related to the IP address such as rating and message."
+                  items:
+                    type: object
+                    description: "Details of a specific insight."
+                    properties:
+                      rating:
+                        type: string
+                        description: "The severity rating of the insight."
+                        example: "suspicious"
+                      message:
+                        type: string
+                        description: "A descriptive message providing context about the insight."
+                        example: "171.25.193.77 is in the list of Tor consensus IPs."
+            fingerprints:
+              type: object
+              description: "IP fingerprints."
+              properties:
+                top_fingerprints:
+                  type: array
+                  description: "An array of top fingerprints."
+                  items:
+                    type: object
+                    properties:
+                      type:
+                        type: string
+                        description: "The type of the fingerprint."
+                        example: ja3s
+                      signature:
+                        type: string
+                        description: "The signature of the fingerprint."
+                        example: eb1d94daa7e0344597e756a1fb6e7054
+                      port:
+                        type: integer
+                        description: "The port associated with the fingerprint."
+                        example: 443
+                      first_seen:
+                        type: string
+                        format: date
+                        description: "The date when the fingerprint was first seen."
+                        example: "2024-07-10"
+                      last_seen:
+                        type: string
+                        format: date
+                        description: "The date when the fingerprint was last seen."
+                        example: "2024-08-08"
+                      count:
+                        type: integer
+                        description: "The count of the fingerprint."
+                        example: 115551
+        proto_by_ip:
+          type: object
+          description: "Contains details of protocols used by the specified IP over a given date range."
+          properties:
+            request_id:
+              type: string
+              description: "The unique identifier or ID of the request."
+              example: "e44a351c-e9c4-5cc7-82f1-50f36484e54d"
+            total:
+              type: number
+              description: "Total number of results."
+              example: 2
+            ip:
+              type: string
+              description: "The Internet Protocol (IP) address being analyzed or queried for the request."
+              example: "171.25.193.77"
+            size:
+              type: number
+              description: "It is the total number of objects in the section."
+              example: 1000
+            start_date:
+              type: string
+              description: "Start Date, The earliest date for results, formatted YYYY-MM-DD in UTC."
+              example: "2024-07-29"
+            end_date:
+              type: string
+              description: "End Date, The latest date for results, formatted YYYY-MM-DD in UTC."
+              example: "2024-07-29"
+            data:
+              type: object
+              description: "Object containing detailed protocol data for the specified IP."
+              properties:
+                dates:
+                  type: array
+                  description: "List of dates covered in the data range."
+                  items:
+                    type: string
+                  example: [ "2024-07-29", "2024-07-30" ]
+                protocols:
+                  type: array
+                  description: "List of IP protocol numbers."
+                  items:
+                    type: number
+                  example: [ 1, 3 ]
+                proto_by_date:
+                  type: array
+                  description: "Detailed protocol information grouped by date."
+                  items:
+                    type: object
+                    properties:
+                      proto:
+                        type: number
+                        description: "Protocol number."
+                        example: 1
+                      keyword:
+                        type: string
+                        description: "Name of Protocol."
+                        example: "ICMP"
+                      data:
+                        type: array
+                        description: "Array of protocol data entries for the specific date."
+                        items:
+                          type: object
+                          properties:
+                            count:
+                              type: number
+                              description: "Number of protocol events on the specific date."
+                              example: 2
+                            date:
+                              type: string
+                              description: "Date of the protocol event in YYYY-MM-DD format."
+                              example: "2024-07-29"
+    ScoutSearchResponse:
+      type: object
+      properties:
+        request_id:
+          type: string
+          description: "The unique identifier or ID of the request."
+          example: "0ee59437-88ee-572a-8fbf-ce5beb62908f"
+        total:
+          type: number
+          description: "Total number of items."
+          example: 254
+        query:
+          type: string
+          description: "A simple or advanced Scout query as described by the Scout query language."
+          example: "pdns.domain = \"*ngrok.io\""
+        size:
+          type: number
+          description: "Size"
+          example: 5000
+        start_date:
+          type: string
+          description: "Start Date, The earliest date for results, formatted YYYY-MM-DD in UTC."
+          example: "2024-06-10"
+        end_date:
+          type: string
+          description: "End date, The latest date for results, formatted YYYY-MM-DD in UTC."
+          example: "2024-07-09"
+        usage:
+          type: object
+          description: "Summary of usage and limits from the Scout API."
+          properties:
+            used_queries:
+              type: number
+              description: "The number of queries already used by the user."
+              example: 49885
+            remaining_queries:
+              type: number
+              description: "The number of remaining queries that can be used by the user."
+              example: 50000
+            query_limit:
+              type: number
+              description:
+                "The maximum number of times a user can query the API. It is the sum of used queries and remaining queries. If used queries exceed the query limit then the 429 status code will be returned with an error message of exceeding the query limit."
+            foundation_api_usage:
+              type: object
+              description: "The foundation API usage detail."
+              properties:
+                used_queries:
+                  type: number
+                  description: "The number of foundation API queries already used by the user."
+                  example: 130
+                remaining_queries:
+                  type: number
+                  description: "The number of remaining foundation API queries that can be used by the user."
+                  example: 9870
+                query_limit:
+                  type: number
+                  description:
+                    "The maximum number of times a user can query the foundation API. It is the sum of used queries and remaining queries. If used queries exceed the query limit then the 429 status code will be returned with an error message of exceeding the query limit."
+                  example: 10000
+            ai_insights_usage:
+              type: object
+              description: "The AI insights usage is an object that will return the details about the AI insights usage."
+              properties:
+                used_queries:
+                  type: number
+                  description: "The number of AI insights queries already used by the user."
+                  example: 0
+                remaining_queries:
+                  type: number
+                  description: "The number of remaining AI insights queries that can be used by the user."
+                  example: 0
+                query_limit:
+                  type: number
+                  description: "The maximum number of times the user can query AI insights. It is the sum of used queries and remaining queries. If used queries exceed the query limit then the 429 status code will be returned with an error message of exceeding the query limit."
+                  example: 0  
+        ips:
+          type: array
+          description: "A list of IP addresses along with their associated details."
+          items:
+            type: object
+            description: "An object containing IP address details."
+            properties:
+              ip:
+                type: string
+                description: "The IP address that associated with the Scout query."
+                example: "3.6.115.182"
+              country_codes:
+                type: array
+                description: "A list of country codes associated with the IP address."
+                items:
+                  type: string
+                example: ["IN"]
+              as_info:
+                type: array
+                description: "A list of Autonomous System (AS) information associated with the IP address."
+                items:
+                  type: object
+                  properties:
+                    asn:
+                      type: number
+                      description: "The Autonomous System Number (ASN) associated with the IP address."
+                      example: 400175
+                    as_name:
+                      type: string
+                      description: "The name of the Autonomous System (AS) associated with the IP address."
+                      example: "AMAZON-02, US"
+              tags:
+                type: array
+                description: "A list of tags associated with the IP address."
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: number
+                      description: "The unique identifier of the tag."
+                      example: 2
+                    name:
+                      type: string
+                      description: "The name of the tag."
+                      example: "cloud"
+                    children:
+                      type: array
+                      description: "A nested array of tags providing more granular categorization under the parent tag."
+                      items:
+                        type: object
+                        properties:
+                          id:
+                            type: number
+                            description: "The unique identifier of the child tag."
+                            example: 263
+                          name:
+                            type: string
+                            description: "The name of the child tag."
+                            example: "amazon"
+                          children:
+                            type: array
+                            nullable: true
+                            example : null
+                            items:
+                              type: object
+                              description: "Additional level of child tag."
+              event_count:
+                type: number
+                description: "The total number of events associated with the IP address."
+                example: 3612207
+              summary:
+                type: object
+                properties:
+                  last_seen:
+                    type: string
+                    description: "The last seen date of the IP address."
+                    example: "2024-07-10"
+                  whois:
+                    type: object
+                    properties:
+                      asn:
+                        type: number
+                        description: "The Autonomous System Number (ASN) associated with the IP address."
+                        example: 400175
+                      as_name:
+                        type: string
+                        description: "The name of the Autonomous System (AS) associated with the IP address."
+                        example: "Amazon.com, Inc"
+                      net_name:
+                        type: string
+                        description: "The name of the network associated with the IP address."
+                        example: "AMAZON-BOM"
+                      org_name:
+                        type: string
+                        description: "The name of the organization associated with the IP address."
+                        example: "Amazon Data Services India"
+                  open_ports:
+                    type: array
+                    description: "A list of open ports associated with the IP address."
+                    items:
+                      type: object
+                      properties:
+                        ip:
+                          type: string
+                          description: "The IP address associated with the open port. This is the IP address that has the open port."
+                          example: "3.6.115.182"
+                        port:
+                          type: number
+                          description: "The port number. This is the specific port number that is open on the IP address."
+                          example: 22
+                        protocol:
+                          type: number
+                          description: "The protocol number. This is the numeric representation of the protocol used by the open port."
+                          example: 6
+                        protocol_text:
+                          type: string
+                          description: "The protocol name. This is the textual representation of the protocol used by the open port."
+                          example: "TCP"
+                        service:
+                          type: string
+                          description: "The service name. This is the name of the service that is associated with the open port."
+                          example: "ssh"
+                        event_count:
+                          type: number
+                          description: "The total number of events associated with the open port. This is the total number of events that have been recorded for the open port."
+                          example: 78
+                  pdns:
+                    type: array
+                    description: "A list of Passive Domain Name System (PDNS) records associated with the IP address."
+                    items:
+                      type: object
+                      properties:
+                        ip:
+                          type: string
+                          description: "The IP address associated with the Passive Domain Name System (PDNS) record."
+                          example: "3.6.115.182"
+                        domain:
+                          type: string
+                          description: "The domain name associated with the Passive Domain Name System (PDNS) record."
+                          example: "22djtygzl.cname.us.ngrok.io"
+                        event_count:
+                          type: number
+                          description: "The total number of events associated with the Passive Domain Name System (PDNS) record."
+                          example: 56791
+                  top_peers:
+                    type: array
+                    description: "A list of top peers associated with the IP address."
+                    items:
+                      type: object
+                      properties:
+                        ip:
+                          type: string
+                          description: "The IP address of the top peer."
+                          example: "102.215.34.210"
+                        event_count:
+                          type: number
+                          description: "The total number of events associated with the top peer."
+                          example: 289631
+                  comms_total:
+                    type: number
+                    description: "The total number of communications associated with the IP address."
+                    example: 3612207
+                  service_counts:
+                    type: array
+                    description: "A list of service counts associated with the IP address."
+                    items:
+                      type: object
+                      properties:
+                        proto:
+                          type: number
+                          description: "The protocol number associated with the service count."
+                          example: 6
+                        proto_text:
+                          type: string
+                          description: "The protocol name associated with the service count."
+                          example: "UDP"
+                        port:
+                          type: number
+                          description: "The port number associated with the service count."
+                          example: 443
+                        event_count:
+                          type: number
+                          description: "The total number of events associated with the service count."
+                          example: 1022736
+                        service:
+                          type: object
+                          properties:
+                            service_name:
+                              type: string
+                              description: "The name of the service."
+                              example: "https"
+                            port:
+                              type: number
+                              description: "The port number associated with the service."
+                              example: 443
+                            proto_number:
+                              type: number
+                              description: "The protocol number associated with the service."
+                              example: 6
+                            description:
+                              type: string
+                              description: "A description of the service."
+                              example: "http protocol over TLS/SSL"
+                  fingerprints:
+                    type: object
+                    description: "Fingerprint details."
+                    properties:
+                      ip:
+                        type: string
+                        description: "The IP address associated with the fingerprint."
+                        example: "3.6.115.182"
+                      type:
+                        type: string
+                        description: "The type of the fingerprint, e.g., ja3s or ja3."
+                        example: "ja3s"
+                      signature:
+                        type: string
+                        description: "The signature of the fingerprint."
+                        example: "40d1db40d00040d1dc43d1db1db43d539b9d77deca9292bdcadbfed36e46f1"
+                      event_count:
+                        type: integer
+                        description: "The total number of events associated with the fingerprint."
+                        example: 121078
+                  certs:
+                      type: object
+                      description: "Certificate details."
+                      properties:
+                        ip:
+                          type: string
+                          description: "The IP address associated with the certificate."
+                          example: "3.6.115.182"
+                        issuer:
+                          type: string
+                          description: "The issuer of the certificate."
+                          example: "CN=R11, O=Let's Encrypt, C=US"
+                        issuer_common_name:
+                          type: string
+                          description: "The common name of the issuer."
+                          example: "R11"
+                        common_name:
+                          type: string
+                          description: "The common name of the certificate."
+                          example: "*.in.ngrok.io"
+                        port:
+                          type: integer
+                          description: "The port number associated with the certificate."
+                          example: 886
+                        event_count:
+                          type: integer
+                          description: "The total number of events associated with the certificate."
+                          example: 526
+              comms_enrichment:
+                type: object
+                description: "An object containing enriched communication information. The communication information includes a list of tags associated with the IP address. The tags are categorized into parent tags and child tags. Each tag has a unique identifier, a name, a CSS color code, and a list of child tags if any. The parent tags and child tags have their own unique identifiers, names, CSS color codes, and additional child tags if any. The communication information also includes the total number of events associated with each tag and child tag."
+                properties:
+                  tags:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                          description: "The unique identifier of the tag."
+                          example: 176
+                        name:
+                          type: string
+                          description: "The name of the tag."
+                          example: "cdn"
+                        css_color:
+                          type: string
+                          description: "The CSS color code of the tag."
+                          example: "#8A532C"
+                        children:
+                          type: array
+                          description: "A nested array of tags providing more granular categorization under the parent tag."
+                          items:
+                            type: object
+                            properties:
+                              id:
+                                type: integer
+                                description: "The unique identifier of the child tag."
+                                example: 210
+                              name:
+                                type: string
+                                description: "The name of the child tag."
+                                example: "cloudflare"
+                              css_color:
+                                type: string
+                                description: "The CSS color code of the child tag."
+                                example: "#9D6034"
+                              children:
+                                type: array
+                                nullable: true
+                                example : null
+                                items:
+                                  type: object
+                                  description: "Additional level of child tag."
+        ip_details_pivot:
+          type: string
+          example:  "pdns.domain = \"*ngrok.io\""
