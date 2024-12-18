@@ -160,12 +160,13 @@ paths:
               - proto_by_ip
               - summary
               - comms
+              - comms:client_server
               - open_ports
               - pdns
               - x509
               - fingerprints
               - whois
-          description: "Sections: A comma separated string that comprised of these identifiers: identity, summary, proto_by_ip, comms, open_ports, pdns,x509, fingerprints, whois"
+          description: "Sections: A comma separated string that comprised of these identifiers: identity, summary, proto_by_ip, comms, comms:client_server, open_ports, pdns,x509, fingerprints, whois"
           example: "identity, summary, comms, open_ports"
       responses:
         200:
@@ -939,6 +940,248 @@ components:
                     type: string
                     description: "The date when the communication was last seen."
                     example: "2024-07-07"
+        comms:client_server:
+          type: object
+          description: "The details of the communication between the client and the server."
+          properties:
+            event_count:
+              type: integer
+              description: "The total number of events associated with the communication between the client and the server."
+              example: 2003697
+            ips:
+              type: array
+              description: "A list of IP addresses of clients and servers involved in the communication."
+              items:
+                type: object
+                properties:
+                  proto:
+                    type: number
+                    description: "The protocol number associated with the communication."
+                    example: 6
+                  proto_text:
+                    type: string
+                    description: "The protocol name associated with the communication."
+                    example: "TCP"
+                  client:
+                    type: object
+                    description: "The details of the client involved in the communication."
+                    properties:
+                      ip:
+                        type: string
+                        description: "The IP address of the client involved in the communication."
+                        example: "70.39.91.101"
+                      min_port:
+                        type: number
+                        description: "The minimum port number used by the client involved in communication."
+                        example: 80
+                      max_port:
+                        type: number
+                        description: "The maximum port number used by the client involved in communication."
+                        example: 60732
+                      country_codes:
+                        type: array
+                        description: "A list of country codes associated with the client involved in communication."
+                        items:
+                          type: string
+                          example: [ "US" ]
+                      as_info:
+                        type: array
+                        description: "A list of Autonomous System (AS) information associated with the client involved in communication."
+                        items:
+                          type: object
+                          properties:
+                            asn:
+                              type: number
+                              description: "The Autonomous System Number (ASN) associated with the client involved in the communication."
+                              example: 46844
+                            as_name:
+                              type: string
+                              description: "The Autonomous System Name (AS-Name) associated with the client involved in the communication."
+                              example: "SHARKTECH, US"
+                      tags:
+                        type: array
+                        description: "A list of tags associated with the client involved in the communication."
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: number
+                              description: "The tag ID associated with the client involved in the communication."
+                              example: 174
+                            name:
+                              type: string
+                              description: "The tag name associated with the client involved in the communication."
+                              example: "tor"
+                            children:
+                              type: array
+                              description: "A list of child tags associated with the client involved in the communication."
+                              items:
+                                type: object
+                                properties:
+                                  id:
+                                    type: number
+                                    description: "The child tag ID associated with the client involved in the communication."
+                                    example: 263
+                                  name:
+                                    type: string
+                                    description: "The child tag name associated with the client involved in the communication."
+                                    example: "ftp-scanner"
+                                  children:
+                                    type: array
+                                    description: "A list of grandchild tags associated with the client involved in the communication."
+                                    items:
+                                      type: object
+                                      properties:
+                                        id:
+                                          type: number
+                                          description: "The grandchild tag ID associated with the client involved in the communication."
+                                          example: 263
+                                        name:
+                                          type: string
+                                          description: "The grandchild tag name associated with the client involved in the communication."
+                                          example: "ftp-scanner"
+                      unique_ports:
+                        type: number
+                        description: "The number of unique ports used by the client involved in the communication."
+                        example: 136
+                      top_services:
+                        type: array
+                        description: "A list of top services associated with the client involved in the communication."
+                        items:
+                          type: object
+                          properties:
+                            service_name:
+                              type: string
+                              description: "The name of the top service associated with the client involved in the communication."
+                              example: ""
+                            port:
+                              type: number
+                              description: "The port number associated with the top service used by the client involved in the communication."
+                              example: 60732
+                            proto_number:
+                              type: number
+                              description: "The protocol number associated with the top service used by the client involved in the communication."
+                              example: 6
+                            description:
+                              type: string
+                              description: "A description of the top service used by the client involved in the communication."
+                              example: ""
+                  server:
+                    type: object
+                    description: "The details of the server involved in the communication."
+                    properties:
+                      ip:
+                        type: string
+                        description: "The IP address of the server involved in the communication."
+                        example: "185.220.100.240"
+                      min_port:
+                        type: number
+                        description: "The minimum port number used by the server involved in the communication."
+                        example: 8149
+                      max_port:
+                        type: number
+                        description: "The maximum port number used by the server involved in the communication."
+                        example: 63767
+                      country_codes:
+                        type: array
+                        description: "A list of country codes associated with the server involved in the communication."
+                        items:
+                          type: string
+                          example: [ "DE" ]
+                      as_info:
+                        type: array
+                        description: "A list of Autonomous System (AS) information associated with the server involved in the communication."
+                        items:
+                          type: object
+                          properties:
+                            asn:
+                              type: number
+                              description: "The Autonomous System Number (ASN) associated with the server involved in the communication."
+                              example: 205100
+                            as_name:
+                              type: string
+                              description: "The Autonomous System Name (AS-Name) associated with the server involved in the communication."
+                              example: "F3NETZE, DE"
+                      tags:
+                        type: array
+                        description: "A list of tags associated with the server involved in the communication."
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: number
+                              description: "The tag ID associated with the server involved in the communication."
+                              example: 174
+                            name:
+                              type: string
+                              description: "The tag name associated with the server involved in the communication."
+                              example: "tor"
+                            children:
+                              type: array
+                              description: "A list of child tags associated with the server involved in the communication."
+                              items:
+                                type: object
+                                properties:
+                                  id:
+                                    type: number
+                                    description: "The child tag ID associated with the server involved in the communication."
+                                    example: 263
+                                  name:
+                                    type: string
+                                    description: "The child tag name associated with the server involved in the communication."
+                                    example: "ftp-scanner"
+                                  children:
+                                    type: array
+                                    description: "A list of grandchild tags associated with the server involved in the communication."
+                                    items:
+                                      type: object
+                                      properties:
+                                        id:
+                                          type: number
+                                          description: "The grandchild tag ID associated with the server involved in the communication."
+                                          example: 263
+                                        name:
+                                          type: string
+                                          description: "The grandchild tag name associated with the server involved in the communication."
+                                          example: "ftp-scanner"
+                      unique_ports:
+                        type: number
+                        description: "The number of unique ports used by the server involved in the communication."
+                        example: 33
+                      top_services:
+                        type: array
+                        description: "A list of top services associated with the server involved in the communication."
+                        items:
+                          type: object
+                          properties:
+                            service_name:
+                              type: string
+                              description: "The name of the top service associated with the server involved in the communication."
+                              example: ""
+                            port:
+                              type: number
+                              description: "The port number associated with the top service used by the server involved in the communication."
+                              example: 63767
+                            proto_number:
+                              type: number
+                              description: "The protocol number associated with the top service used by the server involved in the communication."
+                              example: 6
+                            description:
+                              type: string
+                              description: "A description of the top service used by the server involved in the communication."
+                              example: ""
+                  event_count:
+                    type: integer
+                    description: "The total number of events associated with the communication."
+                    example: 146754
+                  first_seen:
+                    type: string
+                    description: "The date when the communication was first seen."
+                    example: "2024-11-13"
+                  last_seen:
+                    type: string
+                    description: "The date when the communication was last seen."
+                    example: "2024-12-12"
         pdns:
           type: object
           properties:
